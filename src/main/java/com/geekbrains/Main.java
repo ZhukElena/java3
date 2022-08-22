@@ -1,76 +1,26 @@
 package com.geekbrains;
 
+import java.util.concurrent.CountDownLatch;
+
 public class Main {
-    private final Object mon = new Object();
+    private static final int CARS_COUNT = 4;
+    public static final CountDownLatch cdlRace = new CountDownLatch(CARS_COUNT);
+    public static final CountDownLatch cdlReady = new CountDownLatch(CARS_COUNT);
 
-    private volatile char currentLetter = 'A';
+    public static void main(String[] args) throws InterruptedException {
+        System.out.println("ВАЖНОЕ ОБЪЯВЛЕНИЕ >>> Подготовка!!!");
 
-    public static void main(String[] args) {
-
-        Main waitNotifyObj = new Main();
-        Thread thread1 = new Thread(() -> {
-            waitNotifyObj.printA();
-        });
-        Thread thread2 = new Thread(() -> {
-            waitNotifyObj.printB();
-        });
-        Thread thread3 = new Thread(() -> {
-            waitNotifyObj.printC();
-        });
-        thread1.start();
-        thread2.start();
-        thread3.start();
-    }
-
-    public void printA() {
-        synchronized (mon) {
-            try {
-                for (int i = 0; i < 5; i++) {
-                    while (currentLetter != 'A') {
-                        mon.wait(1);
-                    }
-                    System.out.print("A");
-                    currentLetter = 'B';
-                    mon.notify();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        Race race = new Race(new Road(60), new Tunnel(), new Road(40));
+        Car[] cars = new Car[CARS_COUNT];
+        for (int i = 0; i < cars.length; i++) {
+            cars[i] = new Car(race, 20 + (int) (Math.random() * 10));
         }
-    }
-
-    public void printB() {
-        synchronized (mon) {
-            try {
-                for (int i = 0; i < 5; i++) {
-                    while (currentLetter != 'B') {
-                        mon.wait(1);
-                    }
-                    System.out.print("B");
-                    currentLetter = 'C';
-                    mon.notify();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        for (int i = 0; i < cars.length; i++) {
+            new Thread(cars[i]).start();
         }
-    }
-
-    public void printC() {
-        synchronized (mon) {
-            try {
-                for (int i = 0; i < 5; i++) {
-                    while (currentLetter != 'C') {
-                        mon.wait(1);
-                    }
-                    System.out.print("C");
-                    currentLetter = 'A';
-                    mon.notify();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        cdlReady.await();
+        System.out.println("ВАЖНОЕ ОБЪЯВЛЕНИЕ >>> Гонка началась!!!");
+        cdlRace.await();
+        System.out.println("ВАЖНОЕ ОБЪЯВЛЕНИЕ >>> Гонка закончилась!!!");
     }
 }
-
